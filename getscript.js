@@ -21,6 +21,13 @@ let currentQuestionIndex = 0;
 let score = 0;
 let answerLocked = false;
 
+// ===== Decode HTML Entities (from API) =====
+function decodeHTMLEntities(text) {
+  const txt = document.createElement("textarea");
+  txt.innerHTML = text;
+  return txt.value;
+}
+
 // ===== Fetch Questions from API =====
 async function fetchQuestionPool(total = 100) {
   let allQuestions = [];
@@ -37,14 +44,17 @@ async function fetchQuestionPool(total = 100) {
 
     const formatted = data.results.map((q) => {
       const incorrectAnswers = q.incorrect_answers.map((ans) => ({
-        text: ans,
+        text: decodeHTMLEntities(ans),
         correct: false,
       }));
-      const correctAnswer = { text: q.correct_answer, correct: true };
+      const correctAnswer = {
+        text: decodeHTMLEntities(q.correct_answer),
+        correct: true,
+      };
       const answers = [...incorrectAnswers, correctAnswer].sort(
         () => Math.random() - 0.5
       );
-      return { question: q.question, answers };
+      return { question: decodeHTMLEntities(q.question), answers };
     });
 
     allQuestions = [...allQuestions, ...formatted];
@@ -69,7 +79,7 @@ async function startQuiz() {
 
   // Load pool once
   if (questionPool.length === 0) {
-    questionPool = await fetchQuestionPool(100); // safer than 1000
+    questionPool = await fetchQuestionPool(100); // safe pool size
   }
 
   quizQuestions = getRandomQuestions(questionPool, 10);
@@ -183,3 +193,4 @@ function updateProgress() {
 // ===== Event Listeners =====
 startButton.addEventListener("click", startQuiz);
 restartButton.addEventListener("click", restartQuiz);
+
